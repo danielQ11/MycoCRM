@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════
+   MycoCRM — Mushroom Shop Theme
+   ═══════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+}
+
+:root {
+  /* Forest palette */
+  --forest-deepest: #060E08;
+  --forest-deep: #0B1A0F;
+  --forest-mid: #122117;
+  --forest-light: #1A3122;
+  --forest-glow: #2D5A27;
+
+  /* Earthy accent palette */
+  --amber-warm: #D4A853;
+  --amber-light: #E8C97A;
+  --amber-glow: rgba(212, 168, 83, 0.15);
+  --brown-rich: #8B6914;
+  --cream-soft: #F5E6C8;
+
+  /* Spore accents */
+  --spore-gold: #C9A64C;
+  --spore-glow: rgba(201, 166, 76, 0.2);
+  --bio-green: #4ADE80;
+  --bio-glow: rgba(74, 222, 128, 0.12);
+
+  /* Neutrals */
+  --bark-dark: #1C1510;
+  --bark-mid: #2A2018;
+  --moss-text: #8B9A7E;
+  --lichen-text: #A3B89A;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--forest-light) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--forest-light);
+  border-radius: 999px;
+}
+
+body {
+  background: var(--forest-deepest);
+  color: var(--cream-soft);
+  min-height: 100vh;
+}
+
+/* ─── Animated background spores ─── */
+@keyframes float-spore {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-30px) scale(1.1); opacity: 0.6; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -15px) rotate(2deg); }
+  50% { transform: translate(-5px, -25px) rotate(-1deg); }
+  75% { transform: translate(15px, -10px) rotate(3deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.4s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out both;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  animation: fade-in-up 0.4s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+
+/* ─── Glass panels ─── */
+.glass-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(26, 49, 34, 0.6) 0%,
+    rgba(11, 26, 15, 0.8) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(74, 222, 128, 0.08);
+  border-radius: 1.25rem;
+}
+
+.glass-panel-warm {
+  background: linear-gradient(
+    135deg,
+    rgba(44, 32, 16, 0.5) 0%,
+    rgba(11, 26, 15, 0.7) 100%
+  );
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 168, 83, 0.1);
+  border-radius: 1.25rem;
+}
+
+/* ─── Buttons ─── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--amber-warm), var(--spore-gold));
+  color: var(--forest-deepest);
+  font-weight: 700;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(212, 168, 83, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--amber-light), var(--amber-warm));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212, 168, 83, 0.35);
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
+}
+
+.btn-primary > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Input mushroom theme ─── */
+.input-mushroom {
+  background: rgba(11, 26, 15, 0.5);
+  border: 1px solid rgba(74, 222, 128, 0.1);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--cream-soft);
+  outline: none;
+  transition: all 0.3s;
+  width: 100%;
+}
+
+.input-mushroom::placeholder {
+  color: rgba(139, 154, 126, 0.5);
+}
+
+.input-mushroom:focus {
+  border-color: rgba(212, 168, 83, 0.4);
+  box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.08);
+}
+
+/* ─── Table styling ─── */
+.myco-table {
+  width: 100%;
+}
+
+.myco-table thead {
+  background: rgba(26, 49, 34, 0.5);
+}
+
+.myco-table thead th {
+  padding: 0.875rem 1.25rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--moss-text);
+}
+
+.myco-table tbody tr {
+  border-top: 1px solid rgba(74, 222, 128, 0.06);
+  transition: all 0.2s;
+}
+
+.myco-table tbody tr:hover {
+  background: rgba(212, 168, 83, 0.04);
+}
+
+.myco-table tbody td {
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+/* ─── Badge styling ─── */
+.badge-activo {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ADE80;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-inactivo {
+  background: rgba(239, 68, 68, 0.12);
+  color: #F87171;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ─── Selection styles ─── */
+::selection {
+  background: rgba(212, 168, 83, 0.3);
+  color: var(--cream-soft);
+}
+
+/* ─── Custom Scrollbar Utility ─── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(5, 11, 7, 0.3);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 168, 83, 0.15);
+  border-radius: 99px;
+  border: 1px solid rgba(212, 168, 83, 0.05);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 168, 83, 0.35);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 83, 0.15) rgba(5, 11, 7, 0.3);
+}
