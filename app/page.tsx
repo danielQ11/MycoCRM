@@ -6,6 +6,8 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import { AlertCircle, ArrowUpRight, BarChart3, PieChart, Info } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import IntroAnimation from "@/components/ui/IntroAnimation";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Cliente = {
   _id: string;
@@ -22,6 +24,7 @@ export default function Dashboard() {
   const [cargando, setCargando] = useState(true);
   const [shopName, setShopName] = useState("MycoCRM");
   const [dashboardLimit, setDashboardLimit] = useState(4);
+  const [introActive, setIntroActive] = useState(true);
 
   useEffect(() => {
     // Load config
@@ -114,13 +117,24 @@ export default function Dashboard() {
 
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-[#050B07] text-white">
+      <AnimatePresence>
+        {introActive && (
+          <IntroAnimation onComplete={() => setIntroActive(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Background bioluminescent spores */}
       <div className="absolute left-1/3 top-10 h-80 w-80 rounded-full bg-green-950/20 blur-3xl" />
       <div className="absolute right-10 bottom-20 h-96 w-96 rounded-full bg-amber-950/15 blur-3xl" />
 
       <Sidebar />
 
-      <section className="relative z-10 flex-1 pt-24 pb-8 px-4 md:p-10 md:pl-[360px] max-w-full overflow-x-hidden">
+      <motion.section
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: introActive ? 0 : 1, y: introActive ? 15 : 0 }}
+        transition={{ duration: 0.8, delay: 0.1, ease: [0.215, 0.61, 0.355, 1] }}
+        className="relative z-10 flex-1 pt-24 pb-8 px-4 md:p-10 md:pl-[360px] max-w-full overflow-x-hidden"
+      >
         
         {/* ─── Premium Glassmorphic Hero Banner ─── */}
         <div className="relative mb-8 overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-r from-emerald-950/40 via-[#0C1710] to-[#050B07] p-8 shadow-xl">
@@ -451,7 +465,7 @@ export default function Dashboard() {
           </div>
 
         </div>
-      </section>
+      </motion.section>
     </main>
   );
 }
