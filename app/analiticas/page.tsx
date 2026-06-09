@@ -288,7 +288,7 @@ export default function Analiticas() {
   };
 
   return (
-    <main className="relative flex min-h-screen overflow-hidden bg-[#05060B] text-white">
+    <main className="relative flex min-h-screen overflow-hidden bg-[#05060B] text-white pbi-page">
       {/* Background bioluminescent purple/violet spores */}
       <div className="absolute left-1/3 top-10 h-80 w-80 rounded-full bg-purple-950/15 blur-3xl pointer-events-none" />
       <div className="absolute right-10 bottom-20 h-96 w-96 rounded-full bg-violet-950/10 blur-3xl pointer-events-none" />
