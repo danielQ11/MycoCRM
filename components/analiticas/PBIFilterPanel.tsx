@@ -5,6 +5,7 @@ import { X, ChevronDown, ChevronRight, Sparkles, Leaf, Activity, Zap } from "luc
 import { useState } from "react";
 
 type Props = {
+  isOpen: boolean;
   ciudades: string[];
   filtroEstado: string;
   filtroCiudad: string;
@@ -15,7 +16,7 @@ type Props = {
 };
 
 export default function PBIFilterPanel({
-  ciudades, filtroEstado, filtroCiudad,
+  isOpen, ciudades, filtroEstado, filtroCiudad,
   onEstadoChange, onCiudadChange, onClose, onReset,
 }: Props) {
   const [seccionEstado, setSeccionEstado] = useState(true);
@@ -35,7 +36,9 @@ export default function PBIFilterPanel({
   const tipDelDia = tips[new Date().getDay() % tips.length];
 
   return (
-    <div className="pbi-filter-panel w-64 shrink-0 flex flex-col overflow-hidden">
+    <div className={`pbi-filter-panel w-64 shrink-0 flex flex-col overflow-hidden transition-all duration-300 transform ${
+      isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
+    }`}>
       {/* ─── Background Image ─── */}
       <div className="absolute inset-0 pointer-events-none select-none">
         <Image

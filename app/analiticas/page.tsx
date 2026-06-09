@@ -6,6 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import PBIRibbon from "@/components/analiticas/PBIRibbon";
 import PBIFilterPanel from "@/components/analiticas/PBIFilterPanel";
 import PBITile from "@/components/analiticas/PBITile";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   Users, CheckCircle, XCircle, MapPin, TrendingUp,
   Calendar, ArrowUp, ArrowDown,
@@ -62,6 +63,7 @@ export default function Analiticas() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pieTooltipPos, setPieTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const handlePieMouseMove = (state: any) => {
     if (state && state.chartX !== undefined && state.chartY !== undefined) {
@@ -296,14 +298,14 @@ export default function Analiticas() {
   };
 
   return (
-    <main className="relative flex min-h-screen overflow-hidden bg-[#05060B] text-white pbi-page">
+    <main className="relative flex min-h-screen md:h-screen overflow-y-auto md:overflow-hidden bg-[#05060B] text-white pbi-page">
       {/* Background bioluminescent purple/violet spores */}
       <div className="absolute left-1/3 top-10 h-80 w-80 rounded-full bg-purple-950/15 blur-3xl pointer-events-none" />
       <div className="absolute right-10 bottom-20 h-96 w-96 rounded-full bg-violet-950/10 blur-3xl pointer-events-none" />
 
       <Sidebar theme="purple" />
 
-      <div className={`flex-1 flex flex-col md:pl-80 transition-all ${isFullscreen ? "pbi-fullscreen !pl-0" : ""}`}>
+      <div className={`flex-1 flex flex-col md:pl-80 transition-all ${isFullscreen ? "pbi-fullscreen !pl-0 !pt-0" : "pt-16 md:pt-0"} overflow-y-auto md:overflow-hidden`}>
         {/* Ribbon */}
         <PBIRibbon
           onRefresh={cargarClientes}
@@ -316,9 +318,9 @@ export default function Analiticas() {
           lastUpdate={lastUpdate}
         />
 
-        <div className={`flex flex-1 overflow-hidden transition-all ${filtersOpen ? "mr-64" : ""}`}>
+        <div className={`flex flex-1 overflow-y-auto md:overflow-hidden transition-all ${filtersOpen ? "md:mr-64" : ""}`}>
           {/* Canvas */}
-          <div className="pbi-canvas flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+          <div className="pbi-canvas flex-1 overflow-y-visible md:overflow-y-auto custom-scrollbar p-4 md:p-6">
 
              {/* ── KPI Cards ── */}
              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -460,7 +462,7 @@ export default function Analiticas() {
                     <div className="h-64 w-full flex items-center justify-center">
                       {mounted && (
                         <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart cx="50%" cy="50%" outerRadius="75%" data={ciudadesData}>
+                          <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "50%" : "75%"} data={ciudadesData}>
                             <PolarGrid stroke="rgba(139, 92, 246, 0.15)" />
                             <PolarAngleAxis dataKey="name" tick={{ fill: "#C084FC", fontSize: 10, fontWeight: 600 }} />
                             <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
@@ -562,15 +564,22 @@ export default function Analiticas() {
           </div>
 
           {/* Filter Panel */}
-          {filtersOpen && (
-            <PBIFilterPanel
-              ciudades={ciudadesUnicas}
-              filtroEstado={filtroEstado}
-              filtroCiudad={filtroCiudad}
-              onEstadoChange={(v) => { setFiltroEstado(v); setTablePage(0); }}
-              onCiudadChange={(v) => { setFiltroCiudad(v); setTablePage(0); }}
-              onClose={() => setFiltersOpen(false)}
-              onReset={resetFilters}
+          <PBIFilterPanel
+            isOpen={filtersOpen}
+            ciudades={ciudadesUnicas}
+            filtroEstado={filtroEstado}
+            filtroCiudad={filtroCiudad}
+            onEstadoChange={(v) => { setFiltroEstado(v); setTablePage(0); }}
+            onCiudadChange={(v) => { setFiltroCiudad(v); setTablePage(0); }}
+            onClose={() => setFiltersOpen(false)}
+            onReset={resetFilters}
+          />
+
+          {/* Backdrop on Mobile */}
+          {filtersOpen && isMobile && (
+            <div
+              onClick={() => setFiltersOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-10 md:hidden"
             />
           )}
         </div>
