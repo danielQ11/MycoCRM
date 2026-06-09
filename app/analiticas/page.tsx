@@ -371,7 +371,7 @@ export default function Analiticas() {
             ) : (
               <div className="space-y-4">
                 {/* ── Area Chart: Crecimiento ── */}
-                <PBITile title="Crecimiento Acumulado del Micelio" icon={<TrendingUp size={13} className="text-purple-400" />}>
+                <PBITile title="Crecimiento Acumulado del Micelio" icon={<TrendingUp size={13} className="text-purple-400" />} bgImage="/card_bg_mycelium.png">
                   <div className="h-64 w-full">
                     {mounted && (
                       <ResponsiveContainer width="100%" height="100%">
@@ -395,7 +395,7 @@ export default function Analiticas() {
 
                 {/* ── Row: Bar + Donut ── */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <PBITile title="Top Municipios" icon={<MapPin size={13} className="text-purple-400" />}>
+                  <PBITile title="Top Municipios" icon={<MapPin size={13} className="text-purple-400" />} bgImage="/card_bg_spores.png">
                     <div className="h-56 w-full">
                       {mounted && (
                         <ResponsiveContainer width="100%" height="100%">
@@ -414,7 +414,7 @@ export default function Analiticas() {
                     </div>
                   </PBITile>
 
-                  <PBITile title="Ciclo de Actividad" icon={<Calendar size={13} className="text-purple-400" />}>
+                  <PBITile title="Ciclo de Actividad" icon={<Calendar size={13} className="text-purple-400" />} bgImage="/card_bg_mushrooms.png">
                     <div className="h-56 w-full flex items-center justify-center relative">
                       {mounted && (
                         <ResponsiveContainer width="100%" height="100%">
@@ -448,7 +448,7 @@ export default function Analiticas() {
 
                 {/* ── Radar Chart: Territorial mycelium network ── */}
                 {ciudadesData.length > 1 && (
-                  <PBITile title="Nodos de Crecimiento Territorial — Municipios" icon={<MapPin size={13} className="text-purple-400" />}>
+                  <PBITile title="Nodos de Crecimiento Territorial — Municipios" icon={<MapPin size={13} className="text-purple-400" />} bgImage="/card_bg_forest.png">
                     <div className="h-64 w-full flex items-center justify-center">
                       {mounted && (
                         <ResponsiveContainer width="100%" height="100%">
@@ -473,7 +473,7 @@ export default function Analiticas() {
                 )}
 
                 {/* ── Data Table ── */}
-                <PBITile title={`Tabla de Datos — ${total} registros`} icon={<Users size={13} className="text-purple-400" />} bodyClass="!p-0">
+                <PBITile title={`Tabla de Datos — ${total} registros`} icon={<Users size={13} className="text-purple-400" />} bodyClass="!p-0" bgImage="/sidebar_bg.png">
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="pbi-table">
                       <thead>
