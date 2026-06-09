@@ -105,6 +105,14 @@ export default function Analiticas() {
   useEffect(() => {
     setMounted(true);
     cargarClientes();
+
+    // Cambiar barras de scroll globales a morado
+    document.body.classList.add("pbi-body");
+    document.documentElement.classList.add("pbi-body");
+    return () => {
+      document.body.classList.remove("pbi-body");
+      document.documentElement.classList.remove("pbi-body");
+    };
   }, [cargarClientes]);
 
   // Filtered data

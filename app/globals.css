@@ -301,24 +301,34 @@ body {
 }
 
 /* Purple scrollbar exclusive to analytics page */
+body.pbi-body::-webkit-scrollbar,
+html.pbi-body::-webkit-scrollbar,
 .pbi-page *::-webkit-scrollbar,
 .pbi-page::-webkit-scrollbar {
   width: 8px;
 }
+body.pbi-body::-webkit-scrollbar-track,
+html.pbi-body::-webkit-scrollbar-track,
 .pbi-page *::-webkit-scrollbar-track,
 .pbi-page::-webkit-scrollbar-track {
   background: rgba(10, 6, 15, 0.6);
 }
+body.pbi-body::-webkit-scrollbar-thumb,
+html.pbi-body::-webkit-scrollbar-thumb,
 .pbi-page *::-webkit-scrollbar-thumb,
 .pbi-page::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #7C3AED, #A78BFA);
   border-radius: 99px;
   border: 2px solid rgba(10, 6, 15, 0.6);
 }
+body.pbi-body::-webkit-scrollbar-thumb:hover,
+html.pbi-body::-webkit-scrollbar-thumb:hover,
 .pbi-page *::-webkit-scrollbar-thumb:hover,
 .pbi-page::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #8B5CF6, #C084FC);
 }
+body.pbi-body,
+html.pbi-body,
 .pbi-page *,
 .pbi-page {
   scrollbar-width: thin;
