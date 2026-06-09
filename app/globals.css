@@ -300,6 +300,26 @@ body {
   min-height: calc(100vh - 56px);
 }
 
+/* Purple scrollbar exclusive to analytics page */
+.pbi-canvas::-webkit-scrollbar {
+  width: 8px;
+}
+.pbi-canvas::-webkit-scrollbar-track {
+  background: rgba(10, 6, 15, 0.6);
+}
+.pbi-canvas::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7C3AED, #A78BFA);
+  border-radius: 99px;
+  border: 2px solid rgba(10, 6, 15, 0.6);
+}
+.pbi-canvas::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8B5CF6, #C084FC);
+}
+.pbi-canvas {
+  scrollbar-width: thin;
+  scrollbar-color: #7C3AED rgba(10, 6, 15, 0.6);
+}
+
 /* ─── Tile / Visual Container ─── */
 .pbi-tile {
   background: linear-gradient(145deg, rgba(14, 10, 23, 0.95) 0%, rgba(8, 6, 15, 0.98) 100%);
@@ -364,6 +384,11 @@ body {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(167, 139, 250, 0.15) transparent;
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
 }
 
 .pbi-filter-section {

@@ -308,7 +308,7 @@ export default function Analiticas() {
           lastUpdate={lastUpdate}
         />
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className={`flex flex-1 overflow-hidden transition-all ${filtersOpen ? "mr-64" : ""}`}>
           {/* Canvas */}
           <div className="pbi-canvas flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
 
@@ -455,7 +455,7 @@ export default function Analiticas() {
                           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={ciudadesData}>
                             <PolarGrid stroke="rgba(139, 92, 246, 0.15)" />
                             <PolarAngleAxis dataKey="name" tick={{ fill: "#C084FC", fontSize: 10, fontWeight: 600 }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: "#A78BFA", fontSize: 8 }} axisLine={false} />
+                            <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
                             <Radar
                               name="Clientes"
                               dataKey="value"
