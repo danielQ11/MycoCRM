@@ -3,19 +3,15 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Image from "next/image";
-import { 
-  Save, 
-  Sprout, 
-  Database, 
-  Trash2, 
-  CheckCircle2, 
+import {
+  Save,
+  Sprout,
+  CheckCircle2,
   AlertCircle,
   MapPin,
   Clock,
   ListOrdered,
-  Settings2,
-  DatabaseZap,
-  Info
+  Settings2
 } from "lucide-react";
 
 const MUNICIPIOS_PRINCIPALES = [
@@ -40,8 +36,6 @@ export default function ConfiguracionPage() {
   const [defaultStatus, setDefaultStatus] = useState("Activo");
   const [dashboardLimit, setDashboardLimit] = useState("4");
   
-  // Status states
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<{ tipo: "success" | "error"; texto: string } | null>(null);
 
   useEffect(() => {
@@ -59,7 +53,6 @@ export default function ConfiguracionPage() {
 
   const handleSaveConfig = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoadingAction("save");
     setMensaje(null);
 
     try {
@@ -81,46 +74,7 @@ export default function ConfiguracionPage() {
         texto: "Ocurrió un error al guardar localmente: " + String(err),
       });
     } finally {
-      setLoadingAction(null);
-    }
-  };
-
-  const handleAction = async (action: "seed" | "clear") => {
-    if (action === "clear" && !confirm("¿Estás seguro de que deseas limpiar toda la base de datos? Esta acción es irreversible.")) {
-      return;
-    }
-    
-    setLoadingAction(action);
-    setMensaje(null);
-
-    try {
-      const res = await fetch("/api/seed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Error en la operación");
-
-      setMensaje({
-        tipo: "success",
-        texto:
-          action === "seed"
-            ? `¡Semillero exitoso! Se han sembrado ${data.count} clientes de prueba en tu base de datos.`
-            : "¡Terreno limpio! Todos los clientes han sido eliminados de la base de datos.",
-      });
-      
-      // Dispatch event to update stats in sidebar/dashboard
-      window.dispatchEvent(new Event("myco_config_updated"));
-    } catch (err) {
-      setMensaje({
-        tipo: "error",
-        texto: err instanceof Error ? err.message : "Error desconocido",
-      });
-    } finally {
-      setLoadingAction(null);
+      // Config guardada
     }
   };
 
@@ -181,11 +135,11 @@ export default function ConfiguracionPage() {
           </div>
         )}
 
-        {/* ─── Grid Form & Database Actions ─── */}
+        {/* ─── Grid: Form + Hongo Kawaii ─── */}
         <div className="grid gap-8 lg:grid-cols-3 items-start">
-          
-          {/* Form settings (Left column, takes 2 spaces on large screens) */}
-          <div className="relative lg:col-span-2 overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 md:p-8 backdrop-blur-xl">
+
+        {/* Form settings (takes 2 spaces on large screens) */}
+        <div className="relative lg:col-span-2 overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 md:p-8 backdrop-blur-xl">
             {/* Background image */}
             <div className="absolute inset-0 pointer-events-none select-none">
               <Image
@@ -302,19 +256,19 @@ export default function ConfiguracionPage() {
                 <div className="pt-4 border-t border-white/[0.04] flex justify-end">
                   <button
                     type="submit"
-                    disabled={loadingAction === "save"}
+                    disabled={false}
                     className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3.5 text-xs font-bold text-[#050B07] transition hover:scale-[1.02] hover:shadow-lg hover:shadow-amber-500/10 disabled:opacity-50"
                   >
                     <Save size={16} />
-                    {loadingAction === "save" ? "Adaptando sustrato..." : "Guardar Configuración"}
+                    Guardar Configuración
                   </button>
                 </div>
               </form>
             </div>
           </div>
 
-          {/* Database management (Right column, takes 1 space) */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 md:p-8 backdrop-blur-xl flex flex-col h-full justify-between">
+          {/* Hongo Bailando Kawaii */}
+          <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 md:p-8 backdrop-blur-xl flex flex-col items-center justify-center min-h-[400px]">
             {/* Background image */}
             <div className="absolute inset-0 pointer-events-none select-none">
               <Image
@@ -326,44 +280,34 @@ export default function ConfiguracionPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#050B07] via-[#050B07]/80 to-transparent" />
             </div>
 
-            <div className="relative z-10">
-              <h2 className="text-xl font-bold mb-3 flex items-center gap-2.5 text-amber-200/90">
-                <DatabaseZap size={20} className="text-amber-400" />
-                Mantenimiento BD
-              </h2>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
-                Inicializa tu base de datos con clientes de prueba de Antioquia, o limpia completamente el terreno para empezar desde cero.
+            <div className="relative z-10 flex flex-col items-center text-center">
+              {/* Hongo kawaii bailando */}
+              <div className="text-8xl mb-6 animate-bounce">
+                🍄
+              </div>
+
+              {/* Caritas kawaii flotantes */}
+              <div className="flex gap-4 mb-6">
+                <span className="text-3xl animate-pulse">✨</span>
+                <span className="text-3xl animate-pulse" style={{ animationDelay: "0.2s" }}>💖</span>
+                <span className="text-3xl animate-pulse" style={{ animationDelay: "0.4s" }}>✨</span>
+              </div>
+
+              <h3 className="text-xl font-bold text-amber-200/90 mb-3">
+                Hongo Guardián
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed max-w-[200px]">
+                Este honguito cuida tu base de datos mientras trabajas. ¡Baila de alegría porque tus datos están seguros!
               </p>
 
-              {/* Operations info box */}
-              <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 mb-6 flex gap-3">
-                <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                <div className="text-[0.7rem] text-zinc-400 leading-relaxed">
-                  Sembrar cargará un listado de clientes aleatorios con municipios reales como Medellín, Envigado e Itagüí.
-                </div>
+              {/* Suelo de pasto */}
+              <div className="mt-6 flex gap-1">
+                <span className="text-lg">🌱</span>
+                <span className="text-lg">🌿</span>
+                <span className="text-lg">🌱</span>
+                <span className="text-lg">🌿</span>
+                <span className="text-lg">🌱</span>
               </div>
-            </div>
-
-            <div className="relative z-10 space-y-4 pt-4 border-t border-white/[0.04]">
-              {/* Seed Button */}
-              <button
-                onClick={() => handleAction("seed")}
-                disabled={loadingAction !== null}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 py-3.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/10 hover:border-emerald-500/35 disabled:opacity-50"
-              >
-                <Database size={15} />
-                {loadingAction === "seed" ? "Sembrando..." : "Sembrar Clientes de Prueba"}
-              </button>
-
-              {/* Clear Button */}
-              <button
-                onClick={() => handleAction("clear")}
-                disabled={loadingAction !== null}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 py-3.5 text-xs font-bold text-red-400 transition hover:bg-red-500/10 hover:border-red-500/35 disabled:opacity-50"
-              >
-                <Trash2 size={15} />
-                {loadingAction === "clear" ? "Limpiando..." : "Limpiar Todo de Cero"}
-              </button>
             </div>
           </div>
 

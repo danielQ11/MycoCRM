@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import Link from "next/link";
 import Image from "next/image";
@@ -13,9 +15,10 @@ import {
   X,
   Leaf,
   Sparkles,
+  FileSpreadsheet,
 } from "lucide-react";
 
-type SidebarTheme = "default" | "purple";
+type SidebarTheme = "default" | "purple" | "teal";
 
 const themes = {
   default: {
@@ -68,6 +71,31 @@ const themes = {
     maskVia: "to-[#08060E]",
     imgFilter: "hue-rotate(140deg) saturate(1.8) brightness(0.9)",
   },
+  teal: {
+    aside: "bg-[#060D0C]",
+    mobileHeader: "bg-[#060D0C]/95",
+    logoBg: "from-teal-500/20 to-cyan-500/20",
+    logoShadow: "shadow-teal-500/5",
+    shopName: "text-teal-200/90",
+    subtitle: "text-cyan-500/80",
+    activeLink: "bg-gradient-to-r from-teal-500/10 to-transparent text-teal-300 shadow-sm shadow-teal-500/5 border border-teal-500/10",
+    activeIcon: "bg-teal-500/15 text-teal-400",
+    activeDesc: "text-teal-400/60",
+    activeDot: "bg-teal-400 shadow-teal-400/50",
+    tipBorder: "border-teal-500/[0.08]",
+    tipBg: "from-teal-900/10 to-transparent",
+    tipIcon: "text-teal-400/70",
+    tipLabel: "text-teal-400/60",
+    glowTop: "bg-teal-500/[0.04]",
+    glowBottom: "bg-cyan-500/[0.03]",
+    leafIcon: "text-cyan-500/70",
+    leafLabel: "text-cyan-400/70",
+    bottomCard: "from-teal-900/20 to-cyan-900/10",
+    bottomText: "text-teal-400/80",
+    maskGradient: "from-[#060D0C]",
+    maskVia: "to-[#060D0C]",
+    imgFilter: "hue-rotate(180deg) saturate(1.5) brightness(0.9)",
+  },
 };
 
 export default function Sidebar({ theme = "default" }: { theme?: SidebarTheme }) {
@@ -116,6 +144,12 @@ export default function Sidebar({ theme = "default" }: { theme?: SidebarTheme })
       label: "Analíticas",
       icon: BarChart3,
       description: "Gráficas e informes",
+    },
+    {
+      href: "/formulario",
+      label: "Formulario",
+      icon: FileSpreadsheet,
+      description: "Respuestas Google",
     },
     {
       href: "/configuracion",
