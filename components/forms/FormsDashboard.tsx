@@ -12,6 +12,9 @@ import {
   Filter,
   ChevronDown,
   ExternalLink,
+  Phone,
+  Search,
+  Users,
 } from "lucide-react";
 
 // ─── Gráficos SVG personalizados ───
@@ -130,6 +133,17 @@ function MiniLineChart({ data }: { data: { name: string; value: number }[] }) {
 
 type FormRecord = Record<string, string>;
 
+type PersonCallSummary = {
+  key: string;
+  name: string;
+  calls: number;
+  lastCall: string;
+  lastCallTime: number;
+  lastState: string;
+  lastAdvisor: string;
+  lastCity: string;
+};
+
 type SheetsResponse = {
   configured: boolean;
   headers?: string[];
@@ -147,23 +161,73 @@ const REFRESH_INTERVAL_MS = 2 * 60 * 1000; // 2 minutos
 
 // ─── Helpers ───
 
+// Normaliza texto para comparar nombres sin depender de tildes, mayúsculas o espacios.
+function normalizeText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+// Los registros cuyo barrido empieza por "Barrido" no cuentan como llamadas.
+function isBarridoValue(value: string): boolean {
+  return /^barrido/i.test(value.trim());
+}
+
+function isBarridoRecord(record: FormRecord, sweepKey: string | null): boolean {
+  if (!sweepKey) return false;
+  return isBarridoValue(record[sweepKey] || "");
+}
+
+// Google Sheets entrega fechas en formato colombiano: D/M/AAAA H:mm:ss.
+// new Date("3/11/2026") las interpretaría como M/D/AAAA, así que se parsean manualmente.
+function parseSheetDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const value = dateStr.trim();
+
+  const dmy = value.match(
+    /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+
+  if (dmy) {
+    const day = Number(dmy[1]);
+    const month = Number(dmy[2]);
+    const year = Number(dmy[3]);
+    const hours = Number(dmy[4] || 0);
+    const minutes = Number(dmy[5] || 0);
+    const seconds = Number(dmy[6] || 0);
+
+    const date = new Date(year, month - 1, day, hours, minutes, seconds);
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return null;
+    }
+    return date;
+  }
+
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? null : date;
+}
+
 function formatDate(dateStr: string): string {
   if (!dateStr) return "Sin fecha";
-  try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
-    return date.toLocaleDateString("es-CO", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
+  const date = parseSheetDate(dateStr);
+  if (!date) return dateStr;
+  return date.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function getColumnKeys(headers: string[]): {
   dateKey: string | null;
+  nameKey: string | null;
   categoryKey: string | null;
   stateKey: string | null;
   cityKey: string | null;
@@ -180,6 +244,10 @@ function getColumnKeys(headers: string[]): {
     dateKey: findKey([
       /fecha|date|tiempo|time|marca temporal/i,
     ]),
+    nameKey:
+      headers.find((h) => /nombre del cliente/i.test(h)) ||
+      headers.find((h) => /nombre/i.test(h) && !/completo/i.test(h)) ||
+      null,
     categoryKey: findKey([
       /categor|tipo|producto|servicio|motivo|inter[eé]s|preferencia|motivaci[oó]n|aspecto/i,
     ]),
@@ -247,6 +315,24 @@ function getShortLabel(value: string): string {
   return value;
 }
 
+function getStateBadgeClass(state: string): string {
+  const value = normalizeText(state);
+  if (value.includes("exitosa") && !value.includes("no exitosa")) {
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+  }
+  if (value.includes("no contactado") || value.includes("no contest")) {
+    return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+  }
+  if (
+    value.includes("no exitosa") ||
+    value.includes("no interesado") ||
+    value.includes("colg")
+  ) {
+    return "border-rose-500/20 bg-rose-500/10 text-rose-300";
+  }
+  return "border-white/10 bg-white/5 text-zinc-400";
+}
+
 // ─── Componente Principal ───
 
 export default function FormsDashboard() {
@@ -262,6 +348,7 @@ export default function FormsDashboard() {
   const [visibleCount, setVisibleCount] = useState(15);
   const [customFilters, setCustomFilters] = useState<Record<string, string>>({});
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [personSearch, setPersonSearch] = useState("");
 
   // Cargar datos
   const fetchData = useCallback(async (force = false) => {
@@ -294,16 +381,13 @@ export default function FormsDashboard() {
   // Procesar datos para gráficos
   const chartData = useMemo(() => {
     if (!data?.records || !data.headers) return null;
-    const { dateKey, categoryKey, stateKey, cityKey, advisorKey, sweepKey, knowKey, desireKey, interestKey } = getColumnKeys(data.headers);
-    return { dateKey, categoryKey, stateKey, cityKey, advisorKey, sweepKey, knowKey, desireKey, interestKey, records: data.records };
+    const { dateKey, nameKey, categoryKey, stateKey, cityKey, advisorKey, sweepKey, knowKey, desireKey, interestKey } = getColumnKeys(data.headers);
+    return { dateKey, nameKey, categoryKey, stateKey, cityKey, advisorKey, sweepKey, knowKey, desireKey, interestKey, records: data.records };
   }, [data]);
 
-  // Filtrar registros
-  const filteredRecords = useMemo(() => {
-    if (!data?.records) return [];
-    return data.records.filter((record) => {
-      // Excluir automáticamente registros sin categoría
-      if (chartData?.categoryKey && !record[chartData.categoryKey]) return false;
+  // Filtros seleccionados en la UI (se reutilizan para respuestas y resumen de llamadas)
+  const matchesSelectedFilters = useCallback(
+    (record: FormRecord) => {
       if (chartData?.categoryKey && selectedCategory !== "all") {
         if (record[chartData.categoryKey] !== selectedCategory) return false;
       }
@@ -326,8 +410,135 @@ export default function FormsDashboard() {
         }
       }
       return true;
+    },
+    [
+      chartData,
+      selectedCategory,
+      selectedState,
+      selectedCity,
+      selectedAdvisor,
+      selectedSweep,
+      customFilters,
+    ]
+  );
+
+  // Filtrar registros (las respuestas sin "Interés" no se muestran en tarjetas/gráficos)
+  const filteredRecords = useMemo(() => {
+    if (!data?.records) return [];
+    return data.records.filter((record) => {
+      if (chartData?.categoryKey && !record[chartData.categoryKey]) return false;
+      return matchesSelectedFilters(record);
     });
-  }, [data, chartData, selectedCategory, selectedState, selectedCity, selectedAdvisor, selectedSweep, customFilters]);
+  }, [data, chartData, matchesSelectedFilters]);
+
+  // Resumen de llamadas por persona: excluye barridos y respeta los filtros activos.
+  const callSummary = useMemo(() => {
+    const empty = {
+      people: [] as PersonCallSummary[],
+      totalCalls: 0,
+      barridos: 0,
+    };
+    if (!data?.records) return empty;
+
+    const { nameKey, sweepKey, dateKey, stateKey, advisorKey, cityKey } =
+      chartData ?? {};
+    const peopleMap = new Map<string, PersonCallSummary>();
+    let totalCalls = 0;
+    let barridos = 0;
+
+    data.records.forEach((record) => {
+      if (isBarridoRecord(record, sweepKey ?? null)) {
+        barridos += 1;
+        return;
+      }
+      if (!matchesSelectedFilters(record)) return;
+
+      totalCalls += 1;
+
+      const name = nameKey ? (record[nameKey] || "").trim() : "";
+      if (!name) return;
+
+      const key = normalizeText(name);
+      const lastCall = dateKey ? record[dateKey] || "" : "";
+      const lastCallTime = parseSheetDate(lastCall)?.getTime() || 0;
+      const existing = peopleMap.get(key);
+
+      if (!existing) {
+        peopleMap.set(key, {
+          key,
+          name,
+          calls: 1,
+          lastCall,
+          lastCallTime,
+          lastState: stateKey ? getShortLabel(record[stateKey] || "") : "",
+          lastAdvisor: advisorKey ? record[advisorKey] || "" : "",
+          lastCity: cityKey ? record[cityKey] || "" : "",
+        });
+        return;
+      }
+
+      existing.calls += 1;
+      if (lastCallTime >= existing.lastCallTime) {
+        existing.lastCall = lastCall;
+        existing.lastCallTime = lastCallTime;
+        existing.lastState = stateKey
+          ? getShortLabel(record[stateKey] || "")
+          : "";
+        existing.lastAdvisor = advisorKey ? record[advisorKey] || "" : "";
+        existing.lastCity = cityKey ? record[cityKey] || "" : "";
+      }
+    });
+
+    const people = Array.from(peopleMap.values()).sort((a, b) => {
+      if (b.calls !== a.calls) return b.calls - a.calls;
+      return a.name.localeCompare(b.name, "es");
+    });
+
+    return { people, totalCalls, barridos };
+  }, [data, chartData, matchesSelectedFilters]);
+
+  // Total histórico por persona (sin filtros) para mostrarlo en cada tarjeta.
+  const personTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    if (!data?.records || !chartData?.nameKey) return totals;
+
+    data.records.forEach((record) => {
+      if (isBarridoRecord(record, chartData.sweepKey)) return;
+      const name = (record[chartData.nameKey!] || "").trim();
+      if (!name) return;
+      const key = normalizeText(name);
+      totals.set(key, (totals.get(key) || 0) + 1);
+    });
+
+    return totals;
+  }, [data, chartData]);
+
+  // Personas visibles en el resumen según la búsqueda.
+  const filteredPeople = useMemo(() => {
+    const term = normalizeText(personSearch);
+    if (!term) return callSummary.people;
+    return callSummary.people.filter((person) => {
+      return (
+        normalizeText(person.name).includes(term) ||
+        normalizeText(person.lastAdvisor).includes(term) ||
+        normalizeText(person.lastCity).includes(term)
+      );
+    });
+  }, [callSummary.people, personSearch]);
+
+  // Llamadas de los últimos 7 días (sin barridos y con fecha válida).
+  const recentCount = useMemo(() => {
+    if (!data?.records || !chartData?.dateKey) return null;
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - 7);
+    return data.records.filter((record) => {
+      if (isBarridoRecord(record, chartData.sweepKey)) return false;
+      if (!matchesSelectedFilters(record)) return false;
+      const date = parseSheetDate(record[chartData.dateKey!]);
+      return date !== null && date >= cutoff;
+    }).length;
+  }, [data, chartData, matchesSelectedFilters]);
 
   // Datos para gráfico de categorías
   const categoryChartData = useMemo(() => {
@@ -351,14 +562,11 @@ export default function FormsDashboard() {
     filteredRecords.forEach((r) => {
       const fecha = r[chartData.dateKey!];
       if (!fecha) return;
-      // Extraer año-mes para agrupar
-      const date = new Date(fecha);
-      let key: string;
-      if (!isNaN(date.getTime())) {
-        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      } else {
-        key = fecha.slice(0, 7);
-      }
+      // Extraer año-mes para agrupar (fecha en formato D/M/AAAA)
+      const date = parseSheetDate(fecha);
+      const key = date
+        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+        : fecha.slice(0, 7);
       conteo[key] = (conteo[key] || 0) + 1;
     });
     return Object.entries(conteo)
@@ -606,21 +814,40 @@ export default function FormsDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-teal-500/10 bg-gradient-to-br from-teal-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <Phone size={12} className="text-teal-400/70" />
+            Llamadas registradas
+          </p>
+          <p className="mt-2 text-3xl font-extrabold text-teal-400">
+            {callSummary.totalCalls}
+          </p>
+          <p className="mt-1 text-[0.65rem] text-zinc-600">
+            sin contar barridos
+          </p>
+        </div>
+        <div className="rounded-2xl border border-cyan-500/10 bg-gradient-to-br from-cyan-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <Users size={12} className="text-cyan-400/70" />
+            Personas
+          </p>
+          <p className="mt-2 text-3xl font-extrabold text-cyan-400">
+            {callSummary.people.length}
+          </p>
+          <p className="mt-1 text-[0.65rem] text-zinc-600">
+            con llamadas registradas
+          </p>
+        </div>
         <div className="rounded-2xl border border-teal-500/10 bg-gradient-to-br from-teal-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Total Respuestas
+            Respuestas con interés
           </p>
           <p className="mt-2 text-3xl font-extrabold text-teal-400">
             {records.length}
           </p>
-        </div>
-        <div className="rounded-2xl border border-cyan-500/10 bg-gradient-to-br from-cyan-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Columnas
-          </p>
-          <p className="mt-2 text-3xl font-extrabold text-cyan-400">
-            {headers.length}
+          <p className="mt-1 text-[0.65rem] text-zinc-600">
+            visibles en tarjetas y gráficos
           </p>
         </div>
         <div className="rounded-2xl border border-teal-500/10 bg-gradient-to-br from-teal-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
@@ -628,14 +855,10 @@ export default function FormsDashboard() {
             Recientes (7 días)
           </p>
           <p className="mt-2 text-3xl font-extrabold text-cyan-400">
-            {chartData?.dateKey
-              ? records.filter((r) => {
-                  const fecha = new Date(r[chartData.dateKey!]);
-                  const hace7Dias = new Date();
-                  hace7Dias.setDate(hace7Dias.getDate() - 7);
-                  return !isNaN(fecha.getTime()) && fecha >= hace7Dias;
-                }).length
-              : "—"}
+            {recentCount ?? "—"}
+          </p>
+          <p className="mt-1 text-[0.65rem] text-zinc-600">
+            llamadas recientes
           </p>
         </div>
       </div>
@@ -876,6 +1099,121 @@ export default function FormsDashboard() {
         </div>
       )}
 
+      {/* Llamadas por persona */}
+      <div className="relative overflow-hidden rounded-3xl border border-teal-500/10 bg-gradient-to-br from-teal-950/10 via-[#0A1512] to-[#050B07] p-6 backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-zinc-400 flex items-center gap-2">
+              <Phone size={14} className="text-teal-400" />
+              Llamadas por Persona
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              {callSummary.totalCalls}{" "}
+              {callSummary.totalCalls === 1 ? "llamada" : "llamadas"} ·{" "}
+              {callSummary.people.length}{" "}
+              {callSummary.people.length === 1 ? "persona" : "personas"}
+              {callSummary.barridos > 0 && (
+                <>
+                  {" "}·{" "}
+                  <span className="text-amber-400/70">
+                    {callSummary.barridos}{" "}
+                    {callSummary.barridos === 1
+                      ? "barrido excluido"
+                      : "barridos excluidos"}
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+            />
+            <input
+              value={personSearch}
+              onChange={(e) => setPersonSearch(e.target.value)}
+              placeholder="Buscar persona, asesor o ciudad..."
+              className="w-full rounded-xl border border-white/10 bg-black/30 py-2 pl-9 pr-3 text-xs text-white outline-none transition placeholder:text-zinc-600 focus:border-teal-500/40 focus:bg-black/50"
+            />
+          </div>
+        </div>
+
+        {filteredPeople.length === 0 ? (
+          <div className="flex h-28 flex-col items-center justify-center gap-1 text-center text-sm text-zinc-500">
+            <p>No hay llamadas para mostrar con los filtros actuales.</p>
+            {callSummary.barridos > 0 && (
+              <p className="text-xs text-zinc-600">
+                Recuerda que los barridos no se cuentan como llamadas.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="max-h-[28rem] overflow-auto rounded-2xl border border-white/[0.06] custom-scrollbar">
+            <table className="w-full min-w-[680px] text-left text-sm">
+              <thead className="sticky top-0 z-10 bg-[#0A1512]">
+                <tr className="border-b border-white/[0.06] text-[0.62rem] font-bold uppercase tracking-wider text-zinc-500">
+                  <th className="px-4 py-3">Persona</th>
+                  <th className="px-4 py-3 text-center">Llamadas</th>
+                  <th className="px-4 py-3">Última llamada</th>
+                  <th className="px-4 py-3">Último estado</th>
+                  <th className="px-4 py-3">Asesor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPeople.map((person) => (
+                  <tr
+                    key={person.key}
+                    className="border-b border-white/[0.03] transition last:border-0 hover:bg-white/[0.02]"
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-zinc-200">
+                        {person.name}
+                      </p>
+                      {person.lastCity && (
+                        <p className="text-[0.65rem] text-zinc-600">
+                          {person.lastCity}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`inline-flex min-w-8 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                          person.calls > 1
+                            ? "border border-teal-500/20 bg-teal-500/10 text-teal-300"
+                            : "border border-white/10 bg-white/5 text-zinc-400"
+                        }`}
+                      >
+                        {person.calls}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-400">
+                      {person.lastCall ? formatDate(person.lastCall) : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {person.lastState ? (
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-[0.65rem] font-semibold ${getStateBadgeClass(
+                            person.lastState
+                          )}`}
+                        >
+                          {person.lastState}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-400">
+                      {person.lastAdvisor || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Gráficos */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Tendencia temporal */}
@@ -964,45 +1302,73 @@ export default function FormsDashboard() {
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {records.slice(0, visibleCount).map((record, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl border border-teal-500/10 bg-white/[0.02] p-5 hover:bg-white/[0.04] transition"
-                >
-                  {/* Header de la tarjeta */}
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-teal-500/10">
-                    <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
-                      Respuesta #{i + 1}
-                    </span>
-                    {chartData?.dateKey && record[chartData.dateKey!] && (
-                      <span className="text-xs text-zinc-500">
-                        {formatDate(record[chartData.dateKey!])}
-                      </span>
-                    )}
-                  </div>
+              {records.slice(0, visibleCount).map((record, i) => {
+                const nameKey = chartData?.nameKey ?? null;
+                const sweepKey = chartData?.sweepKey ?? null;
+                const personName = nameKey ? record[nameKey] || "" : "";
+                const personTotal = personName
+                  ? personTotals.get(normalizeText(personName)) || 0
+                  : 0;
+                const barrido = isBarridoRecord(record, sweepKey);
 
-                  {/* Preguntas y respuestas */}
-                  <div className="space-y-3">
-                    {headers.slice(0, visibleCount >= records.length ? headers.length : 6).map((header) => {
-                      const value = record[header];
-                      if (!value) return null;
-                      return (
-                        <div key={header}>
-                          <p className="text-[0.65rem] font-bold text-teal-400/70 uppercase tracking-wider mb-0.5 truncate">
-                            {header}
-                          </p>
-                          <p className="text-sm text-zinc-300 leading-relaxed">
-                            {header.toLowerCase().includes("fecha") ||
-                            header.toLowerCase().includes("date")
-                              ? formatDate(value)
-                              : value}
-                          </p>
-                        </div>
-                      );
-                    })}
+                return (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-teal-500/10 bg-white/[0.02] p-5 hover:bg-white/[0.04] transition"
+                  >
+                    {/* Header de la tarjeta */}
+                    <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-teal-500/10">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
+                          Respuesta #{i + 1}
+                        </span>
+                        {barrido ? (
+                          <span
+                            title="Los barridos no cuentan como llamadas"
+                            className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-amber-300"
+                          >
+                            Barrido
+                          </span>
+                        ) : personTotal > 0 ? (
+                          <span
+                            title="Total de llamadas de esta persona, sin contar barridos"
+                            className="rounded-full border border-teal-500/15 bg-teal-500/5 px-2 py-0.5 text-[0.6rem] font-bold text-teal-300/80"
+                          >
+                            {personTotal}{" "}
+                            {personTotal === 1 ? "llamada" : "llamadas"}
+                          </span>
+                        ) : null}
+                      </div>
+                      {chartData?.dateKey && record[chartData.dateKey!] && (
+                        <span className="flex-shrink-0 text-xs text-zinc-500">
+                          {formatDate(record[chartData.dateKey!])}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Preguntas y respuestas */}
+                    <div className="space-y-3">
+                      {headers.slice(0, visibleCount >= records.length ? headers.length : 6).map((header) => {
+                        const value = record[header];
+                        if (!value) return null;
+                        return (
+                          <div key={header}>
+                            <p className="text-[0.65rem] font-bold text-teal-400/70 uppercase tracking-wider mb-0.5 truncate">
+                              {header}
+                            </p>
+                            <p className="text-sm text-zinc-300 leading-relaxed">
+                              {header.toLowerCase().includes("fecha") ||
+                              header.toLowerCase().includes("date")
+                                ? formatDate(value)
+                                : value}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {visibleCount < records.length && (
