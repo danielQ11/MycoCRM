@@ -9,7 +9,6 @@ type Cliente = {
   telefono: string;
   correo: string;
   ciudad: string;
-  estado: string;
   fechaRegistro: string;
 };
 
@@ -84,9 +83,6 @@ export default function ClientesTable({
               Ciudad
             </th>
             <th className="p-4 text-left text-sm font-medium text-zinc-400">
-              Estado
-            </th>
-            <th className="p-4 text-left text-sm font-medium text-zinc-400">
               Fecha Registro
             </th>
             <th className="p-4 text-right text-sm font-medium text-zinc-400">
@@ -115,18 +111,6 @@ export default function ClientesTable({
 
               <td className="p-4 text-zinc-300">
                 {cliente.ciudad || "—"}
-              </td>
-
-              <td className="p-4">
-                <span
-                  className={`rounded-full px-3 py-1 text-sm font-medium ${
-                    cliente.estado === "Activo"
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-red-500/20 text-red-400"
-                  }`}
-                >
-                  {cliente.estado}
-                </span>
               </td>
 
               <td className="p-4 text-zinc-300">

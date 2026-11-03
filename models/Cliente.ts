@@ -18,11 +18,6 @@ const ClienteSchema = new mongoose.Schema({
     type: String,
   },
 
-  estado: {
-    type: String,
-    default: "Activo",
-  },
-
   fechaRegistro: {
     type: Date,
     default: Date.now,

@@ -8,35 +8,30 @@ const MOCK_CLIENTES = [
     telefono: "3001234567",
     correo: "juan.perez@gmail.com",
     ciudad: "Medellín",
-    estado: "Activo",
   },
   {
     nombre: "Ana Gómez",
     telefono: "3109876543",
     correo: "ana.gomez@gmail.com",
     ciudad: "Envigado",
-    estado: "Activo",
   },
   {
     nombre: "Carlos Ruiz",
     telefono: "3155558888",
     correo: "carlos.ruiz@gmail.com",
     ciudad: "Sabaneta",
-    estado: "Inactivo",
   },
   {
     nombre: "Hifas del Valle",
     telefono: "3014567890",
     correo: "hifasvalle@gmail.com",
     ciudad: "Rionegro",
-    estado: "Activo",
   },
   {
     nombre: "María Fungicultura",
     telefono: "3201112222",
     correo: "maria.fungi@gmail.com",
     ciudad: "Bello",
-    estado: "Activo",
   },
 ];
 

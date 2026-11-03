@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertCircle,
   MapPin,
-  Clock,
   ListOrdered,
   Settings2
 } from "lucide-react";
@@ -33,7 +32,6 @@ const MUNICIPIOS_PRINCIPALES = [
 export default function ConfiguracionPage() {
   const [shopName, setShopName] = useState("MycoCRM");
   const [defaultCity, setDefaultCity] = useState("Medellín");
-  const [defaultStatus, setDefaultStatus] = useState("Activo");
   const [dashboardLimit, setDashboardLimit] = useState("4");
   
   const [mensaje, setMensaje] = useState<{ tipo: "success" | "error"; texto: string } | null>(null);
@@ -42,12 +40,10 @@ export default function ConfiguracionPage() {
     // Load config from localStorage on mount
     const savedName = localStorage.getItem("myco_shop_name");
     const savedCity = localStorage.getItem("myco_default_city");
-    const savedStatus = localStorage.getItem("myco_default_status");
     const savedLimit = localStorage.getItem("myco_dashboard_limit");
 
     if (savedName) setShopName(savedName);
     if (savedCity) setDefaultCity(savedCity);
-    if (savedStatus) setDefaultStatus(savedStatus);
     if (savedLimit) setDashboardLimit(savedLimit);
   }, []);
 
@@ -58,7 +54,6 @@ export default function ConfiguracionPage() {
     try {
       localStorage.setItem("myco_shop_name", shopName);
       localStorage.setItem("myco_default_city", defaultCity);
-      localStorage.setItem("myco_default_status", defaultStatus);
       localStorage.setItem("myco_dashboard_limit", dashboardLimit);
 
       // Trigger sidebar update and dashboard update
@@ -174,55 +169,30 @@ export default function ConfiguracionPage() {
                   />
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {/* Municipio Predeterminado */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-                      <MapPin size={14} className="text-emerald-500" />
-                      Municipio Predeterminado
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={defaultCity}
-                        onChange={(e) => setDefaultCity(e.target.value)}
-                        className="w-full appearance-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 cursor-pointer"
-                      >
-                        <option value="" className="bg-[#0b120e] text-zinc-500">Ninguno (Dejar vacío)</option>
-                        {MUNICIPIOS_PRINCIPALES.map((m) => (
-                          <option key={m} value={m} className="bg-[#0b120e] text-zinc-300">
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                      {/* Custom dropdown arrow */}
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Estado Predeterminado */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-                      <Clock size={14} className="text-emerald-500" />
-                      Estado Predeterminado (Nuevos)
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={defaultStatus}
-                        onChange={(e) => setDefaultStatus(e.target.value)}
-                        className="w-full appearance-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 cursor-pointer"
-                      >
-                        <option value="Activo" className="bg-[#0b120e] text-zinc-300">Activo</option>
-                        <option value="Inactivo" className="bg-[#0b120e] text-zinc-300">Inactivo</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                        </svg>
-                      </div>
+                {/* Municipio Predeterminado */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                    <MapPin size={14} className="text-emerald-500" />
+                    Municipio Predeterminado
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={defaultCity}
+                      onChange={(e) => setDefaultCity(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 cursor-pointer"
+                    >
+                      <option value="" className="bg-[#0b120e] text-zinc-500">Ninguno (Dejar vacío)</option>
+                      {MUNICIPIOS_PRINCIPALES.map((m) => (
+                        <option key={m} value={m} className="bg-[#0b120e] text-zinc-300">
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                    {/* Custom dropdown arrow */}
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                      </svg>
                     </div>
                   </div>
                 </div>

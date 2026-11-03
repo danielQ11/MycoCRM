@@ -138,7 +138,6 @@ type ClienteData = {
   telefono: string;
   correo: string;
   ciudad: string;
-  estado: string;
 };
 
 type Props = {
@@ -153,7 +152,6 @@ const camposVacios: ClienteData = {
   telefono: "",
   correo: "",
   ciudad: "",
-  estado: "Activo",
 };
 
 export default function ClienteModal({
@@ -179,18 +177,15 @@ export default function ClienteModal({
         telefono: cliente.telefono || "",
         correo: cliente.correo || "",
         ciudad: cliente.ciudad || "",
-        estado: cliente.estado || "Activo",
       });
       setBusquedaCiudad(cliente.ciudad || "");
     } else {
       const defaultCity = typeof window !== "undefined" ? localStorage.getItem("myco_default_city") || "" : "";
-      const defaultStatus = typeof window !== "undefined" ? localStorage.getItem("myco_default_status") || "Activo" : "Activo";
       setForm({
         nombre: "",
         telefono: "",
         correo: "",
         ciudad: defaultCity,
-        estado: defaultStatus,
       });
       setBusquedaCiudad(defaultCity);
     }
@@ -431,8 +426,8 @@ export default function ClienteModal({
             </div>
           </div>
 
-          {/* Ciudad y Estado */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Ciudad */}
+          <div>
             <div className="relative">
               <label className="mb-1.5 block text-sm font-medium text-zinc-400">
                 Ciudad * <span className="text-zinc-600">(Antioquia)</span>
@@ -474,25 +469,6 @@ export default function ClienteModal({
                   {errores.ciudad}
                 </p>
               )}
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-400">
-                Estado
-              </label>
-              <select
-                name="estado"
-                value={form.estado}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-green-500/50 focus:ring-1 focus:ring-green-500/30"
-              >
-                <option value="Activo" className="bg-[#111916]">
-                  Activo
-                </option>
-                <option value="Inactivo" className="bg-[#111916]">
-                  Inactivo
-                </option>
-              </select>
             </div>
           </div>
 

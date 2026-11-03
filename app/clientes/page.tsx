@@ -14,7 +14,6 @@ type Cliente = {
   telefono: string;
   correo: string;
   ciudad: string;
-  estado: string;
   fechaRegistro: string;
 };
 
@@ -140,7 +139,7 @@ export default function ClientesPage() {
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">
                 🌱
               </span>
-              <span className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-emerald-500/80">Ecosistema Activo</span>
+              <span className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-emerald-500/80">Ecosistema Vivo</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-amber-100 to-emerald-100 bg-clip-text text-transparent">
               Clientes

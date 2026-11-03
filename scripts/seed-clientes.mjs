@@ -257,6 +257,12 @@ async function main() {
     fs.mkdirSync(backupDir, { recursive: true });
     fs.writeFileSync(backupPath, JSON.stringify(existing, null, 2), "utf8");
 
+    // Eliminar el campo estado (Activo/Inactivo) de registros antiguos.
+    const statusCleanup = await collection.updateMany(
+      { estado: { $exists: true } },
+      { $unset: { estado: "" } }
+    );
+
     // Reubicar clientes de municipios lejanos dentro del Valle de Aburrá.
     const allowedCities = new Set(CITIES.map((city) => city.name));
     const cityUpdates = [];
@@ -301,7 +307,6 @@ async function main() {
         telefono: generatePhone(usedPhones),
         correo: generateEmail(nombre, usedEmails),
         ciudad: pickWeighted(CITIES),
-        estado: randomInt(100) < 12 ? "Inactivo" : "Activo",
         fechaRegistro: generateDate(),
         __v: 0,
       });
@@ -318,24 +323,14 @@ async function main() {
         { $sort: { count: -1, _id: 1 } },
       ])
       .toArray();
-    const byState = await collection
-      .aggregate([
-        { $group: { _id: "$estado", count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ])
-      .toArray();
 
     console.log(`Respaldo: ${backupPath}`);
+    console.log(`Estados eliminados: ${statusCleanup.modifiedCount}`);
     console.log(`Ciudades reubicadas: ${cityUpdates.length}`);
     console.log(`Clientes insertados: ${newClients.length}`);
     console.log(`Total final: ${finalCount}`);
     console.log(
       `Por ciudad: ${byCity
-        .map((item) => `${item._id}: ${item.count}`)
-        .join(" | ")}`
-    );
-    console.log(
-      `Por estado: ${byState
         .map((item) => `${item._id}: ${item.count}`)
         .join(" | ")}`
     );

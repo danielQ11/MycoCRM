@@ -32,7 +32,6 @@ export async function GET() {
       telefono: cliente.telefono ?? "",
       correo: cliente.correo ?? "",
       ciudad: cliente.ciudad ?? "",
-      estado: cliente.estado ?? "Activo",
       fechaRegistro: cliente.fechaRegistro
         ? new Date(cliente.fechaRegistro).toISOString()
         : null,

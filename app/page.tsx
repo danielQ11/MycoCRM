@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import StatsCard from "@/components/dashboard/StatsCard";
-import { AlertCircle, ArrowUpRight, BarChart3, PieChart, Info } from "lucide-react";
+import { AlertCircle, ArrowUpRight, BarChart3, Info } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import IntroAnimation from "@/components/ui/IntroAnimation";
@@ -16,7 +16,6 @@ type Cliente = {
   telefono: string;
   correo: string;
   ciudad: string;
-  estado: string;
   fechaRegistro: string;
 };
 
@@ -69,9 +68,10 @@ export default function Dashboard() {
 
   // ─── Estadísticas Generales ───
   const totalClientes = clientes.length;
-  const activosClientes = clientes.filter((c) => c.estado === "Activo").length;
-  const inactivosClientes = totalClientes - activosClientes;
-  
+  const totalCiudades = new Set(
+    clientes.map((c) => c.ciudad).filter(Boolean)
+  ).size;
+
   const nuevosEsteMes = clientes.filter((c) => {
     const fecha = new Date(c.fechaRegistro);
     const ahora = new Date();
@@ -100,14 +100,30 @@ export default function Dashboard() {
   const ciudadesStats = obtenerCiudadesStats();
   const maxCantidadCiudad = ciudadesStats.length > 0 ? Math.max(...ciudadesStats.map((c) => c.cantidad)) : 1;
 
-  // ─── Lógica para Donut Chart de Estados ───
-  const activoPorcentaje = totalClientes > 0 ? Math.round((activosClientes / totalClientes) * 100) : 0;
-  const inactivoPorcentaje = totalClientes > 0 ? 100 - activoPorcentaje : 0;
-  
-  // Parámetros de la rosca
-  const radio = 45;
-  const circunferencia = 2 * Math.PI * radio;
-  const strokeDashoffsetActivo = circunferencia - (activoPorcentaje / 100) * circunferencia;
+  // ─── Lógica para Gráfica de Registros Recientes ───
+  const registrosPorMes = (() => {
+    const ahora = new Date();
+    const meses: { key: string; label: string; cantidad: number }[] = [];
+
+    for (let i = 5; i >= 0; i -= 1) {
+      const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+      meses.push({
+        key: `${fecha.getFullYear()}-${fecha.getMonth()}`,
+        label: fecha.toLocaleDateString("es-CO", { month: "short" }),
+        cantidad: 0,
+      });
+    }
+
+    const porMes = new Map(meses.map((mes) => [mes.key, mes]));
+    clientes.forEach((c) => {
+      const fecha = new Date(c.fechaRegistro);
+      const mes = porMes.get(`${fecha.getFullYear()}-${fecha.getMonth()}`);
+      if (mes) mes.cantidad += 1;
+    });
+
+    return meses;
+  })();
+  const maxRegistrosMes = Math.max(1, ...registrosPorMes.map((m) => m.cantidad));
 
   const formatearFecha = (fecha: string) => {
     return new Date(fecha).toLocaleDateString("es-CO", {
@@ -191,10 +207,10 @@ export default function Dashboard() {
           />
 
           <StatsCard
-            title="Clientes Activos"
-            value={cargando ? "..." : String(activosClientes)}
-            icon="🌿"
-            trend={`${activoPorcentaje}% ratio activo`}
+            title="Municipios"
+            value={cargando ? "..." : String(totalCiudades)}
+            icon="📍"
+            trend="Valle de Aburrá"
             color="green"
             bgImage="/card_bg_spores.png"
           />
@@ -264,7 +280,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Gráfica 2: Estado de Clientes (Donut chart) */}
+          {/* Gráfica 2: Registros recientes (últimos 6 meses) */}
           <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-xl">
             {/* Background image */}
             <div className="absolute inset-0 pointer-events-none select-none">
@@ -279,8 +295,8 @@ export default function Dashboard() {
 
             <div className="relative z-10 h-full flex flex-col">
               <h2 className="text-lg font-bold text-amber-200/90 flex items-center gap-2 mb-6">
-                <PieChart size={18} className="text-amber-400" />
-                Ciclo de Vida del Micelio (Estados)
+                <BarChart3 size={18} className="text-amber-400" />
+                Nuevos Registros (Últimos 6 Meses)
               </h2>
 
               {cargando ? (
@@ -290,70 +306,33 @@ export default function Dashboard() {
               ) : totalClientes === 0 ? (
                 <div className="flex flex-1 flex-col items-center justify-center text-zinc-500 text-sm gap-2">
                   <Info size={24} className="text-zinc-600" />
-                  <p>Sin datos para graficar estados.</p>
+                  <p>Sin datos para graficar registros.</p>
                 </div>
               ) : (
-                <div className="flex flex-1 flex-col items-center justify-center gap-6">
-                  {/* SVG Donut — Centered */}
-                  <div className="relative flex items-center justify-center">
-                    <svg width="140" height="140" viewBox="0 0 140 140" className="-rotate-90 transform">
-                      {/* Background Circle */}
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radio}
-                        className="stroke-white/5"
-                        strokeWidth="12"
-                        fill="transparent"
-                      />
-                      {/* Inactivo Circle */}
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radio}
-                        className="stroke-red-500/25"
-                        strokeWidth="12"
-                        strokeDasharray={circunferencia}
-                        strokeDashoffset={0}
-                        fill="transparent"
-                      />
-                      {/* Activo Arc */}
-                      <circle
-                        cx="70"
-                        cy="70"
-                        r={radio}
-                        className="stroke-emerald-500 transition-all duration-1000"
-                        strokeWidth="12"
-                        strokeDasharray={circunferencia}
-                        strokeDashoffset={strokeDashoffsetActivo}
-                        strokeLinecap="round"
-                        fill="transparent"
-                      />
-                    </svg>
-                    {/* Center Text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-extrabold text-white">{activoPorcentaje}%</span>
-                      <span className="text-[0.6rem] font-bold text-emerald-400 uppercase tracking-[0.15em]">Activo</span>
-                    </div>
-                  </div>
-
-                  {/* Legend — Horizontal on wider, stacked on narrow */}
-                  <div className="grid grid-cols-2 gap-3 w-full">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                      <div className="h-3 w-3 shrink-0 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-                      <div className="min-w-0">
-                        <p className="text-[0.6rem] text-zinc-500 font-bold uppercase tracking-wider">Activos</p>
-                        <p className="text-sm font-bold text-emerald-300 truncate">{activosClientes} clientes ({activoPorcentaje}%)</p>
+                <div className="flex flex-1 flex-col justify-end">
+                  <div className="flex h-52 items-end justify-between gap-3">
+                    {registrosPorMes.map((mes) => (
+                      <div
+                        key={mes.key}
+                        className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                      >
+                        <span className="text-sm font-bold text-amber-300">
+                          {mes.cantidad}
+                        </span>
+                        <div
+                          className="w-full max-w-14 rounded-t-xl bg-gradient-to-t from-emerald-600 to-amber-400 shadow-[0_0_12px_rgba(74,222,128,0.2)] transition-all duration-1000"
+                          style={{
+                            height: `${Math.max(
+                              8,
+                              (mes.cantidad / maxRegistrosMes) * 140
+                            )}px`,
+                          }}
+                        />
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-500">
+                          {mes.label}
+                        </span>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/10">
-                      <div className="h-3 w-3 shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/50" />
-                      <div className="min-w-0">
-                        <p className="text-[0.6rem] text-zinc-500 font-bold uppercase tracking-wider">Inactivos</p>
-                        <p className="text-sm font-bold text-red-300 truncate">{inactivosClientes} clientes ({inactivoPorcentaje}%)</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -409,13 +388,6 @@ export default function Dashboard() {
                         <h4 className="font-bold text-white text-sm truncate max-w-[140px]">
                           {cliente.nombre}
                         </h4>
-                        <span className={`text-[0.65rem] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                          cliente.estado === "Activo" 
-                            ? "bg-emerald-500/10 text-emerald-400" 
-                            : "bg-red-500/10 text-red-400"
-                        }`}>
-                          {cliente.estado}
-                        </span>
                       </div>
                       <p className="text-xs text-zinc-500 mt-2 truncate">
                         📍 {cliente.ciudad}

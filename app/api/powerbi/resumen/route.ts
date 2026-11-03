@@ -22,42 +22,35 @@ export async function GET() {
   try {
     await connectDB();
 
-    const [
-      totalClientes,
-      clientesActivos,
-      clientesInactivos,
-      clientesPorCiudad,
-      clientesPorMes,
-    ] = await Promise.all([
-      Cliente.countDocuments(),
-      Cliente.countDocuments({ estado: "Activo" }),
-      Cliente.countDocuments({ estado: "Inactivo" }),
+    const [totalClientes, clientesPorCiudad, clientesPorMes] =
+      await Promise.all([
+        Cliente.countDocuments(),
 
-      // Agrupación por ciudad
-      Cliente.aggregate([
-        {
-          $group: {
-            _id: "$ciudad",
-            cantidad: { $sum: 1 },
-          },
-        },
-        { $sort: { cantidad: -1 } },
-      ]),
-
-      // Agrupación por mes de registro
-      Cliente.aggregate([
-        {
-          $group: {
-            _id: {
-              año: { $year: "$fechaRegistro" },
-              mes: { $month: "$fechaRegistro" },
+        // Agrupación por ciudad
+        Cliente.aggregate([
+          {
+            $group: {
+              _id: "$ciudad",
+              cantidad: { $sum: 1 },
             },
-            cantidad: { $sum: 1 },
           },
-        },
-        { $sort: { "_id.año": -1, "_id.mes": -1 } },
-      ]),
-    ]);
+          { $sort: { cantidad: -1 } },
+        ]),
+
+        // Agrupación por mes de registro
+        Cliente.aggregate([
+          {
+            $group: {
+              _id: {
+                año: { $year: "$fechaRegistro" },
+                mes: { $month: "$fechaRegistro" },
+              },
+              cantidad: { $sum: 1 },
+            },
+          },
+          { $sort: { "_id.año": -1, "_id.mes": -1 } },
+        ]),
+      ]);
 
     // Formatear datos planos para Power BI
     const porCiudad = clientesPorCiudad.map((item) => ({
@@ -77,12 +70,6 @@ export async function GET() {
         resumenGeneral: [
           {
             totalClientes,
-            clientesActivos,
-            clientesInactivos,
-            tasaActividad:
-              totalClientes > 0
-                ? Math.round((clientesActivos / totalClientes) * 100)
-                : 0,
           },
         ],
         clientesPorCiudad: porCiudad,

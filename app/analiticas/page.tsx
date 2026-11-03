@@ -8,7 +8,7 @@ import PBIFilterPanel from "@/components/analiticas/PBIFilterPanel";
 import PBITile from "@/components/analiticas/PBITile";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
-  Users, CheckCircle, XCircle, MapPin, TrendingUp,
+  Users, MapPin, TrendingUp,
   Calendar, ArrowUp, ArrowDown,
 } from "lucide-react";
 import {
@@ -23,11 +23,10 @@ type Cliente = {
   telefono: string;
   correo: string;
   ciudad: string;
-  estado: string;
   fechaRegistro: string;
 };
 
-type SortKey = "nombre" | "ciudad" | "estado" | "fechaRegistro";
+type SortKey = "nombre" | "ciudad" | "fechaRegistro";
 
 const COLORS_BAR = ["#8B5CF6", "#A78BFA", "#C084FC", "#D8B4FE", "#9F7AEA", "#7C3AED", "#6366F1", "#805AD5"];
 const ROWS_PER_PAGE = 8;
@@ -77,7 +76,6 @@ export default function Analiticas() {
   };
 
   // Filters
-  const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroCiudad, setFiltroCiudad] = useState("");
 
   // Table
@@ -120,11 +118,10 @@ export default function Analiticas() {
   // Filtered data
   const clientesFiltrados = useMemo(() => {
     return clientes.filter((c) => {
-      if (filtroEstado && c.estado !== filtroEstado) return false;
       if (filtroCiudad && c.ciudad !== filtroCiudad) return false;
       return true;
     });
-  }, [clientes, filtroEstado, filtroCiudad]);
+  }, [clientes, filtroCiudad]);
 
   // All unique cities for filter
   const ciudadesUnicas = useMemo(() => {
@@ -134,10 +131,15 @@ export default function Analiticas() {
 
   // KPIs
   const total = clientesFiltrados.length;
-  const activos = clientesFiltrados.filter((c) => c.estado === "Activo").length;
-  const inactivos = total - activos;
-  const pctActivos = total > 0 ? Math.round((activos / total) * 100) : 0;
   const territorios = new Set(clientesFiltrados.map((c) => c.ciudad).filter(Boolean)).size;
+  const nuevosEsteMes = clientesFiltrados.filter((c) => {
+    const fecha = new Date(c.fechaRegistro);
+    const ahora = new Date();
+    return (
+      fecha.getMonth() === ahora.getMonth() &&
+      fecha.getFullYear() === ahora.getFullYear()
+    );
+  }).length;
 
   // Chart data
   const ciudadesData = useMemo(() => {
@@ -172,10 +174,14 @@ export default function Analiticas() {
     return datos.length > 0 ? datos : [{ fecha: "Sin datos", nuevos: 0, acumulado: 0 }];
   }, [clientesFiltrados]);
 
-  const dataEstados = [
-    { name: "Activos", value: activos, color: "#8B5CF6" },
-    { name: "Inactivos", value: inactivos, color: "#D8B4FE" },
-  ];
+  const ciudadesPieData = ciudadesData.slice(0, 6).map((ciudad, i) => ({
+    ...ciudad,
+    color: COLORS_BAR[i % COLORS_BAR.length],
+  }));
+  const otrosCiudades = ciudadesData.slice(6).reduce((sum, c) => sum + c.value, 0);
+  if (otrosCiudades > 0) {
+    ciudadesPieData.push({ name: "Otros", value: otrosCiudades, color: "#4C1D95" });
+  }
 
   // Table sorting & pagination
   const tableSorted = useMemo(() => {
@@ -197,9 +203,9 @@ export default function Analiticas() {
   };
 
   const exportarCSV = () => {
-    const headers = ["Nombre", "Teléfono", "Correo", "Ciudad", "Estado", "Fecha"];
+    const headers = ["Nombre", "Teléfono", "Correo", "Ciudad", "Fecha"];
     const rows = clientesFiltrados.map((c) => [
-      c.nombre, c.telefono || "", c.correo || "", c.ciudad || "", c.estado,
+      c.nombre, c.telefono || "", c.correo || "", c.ciudad || "",
       c.fechaRegistro,
     ]);
     const csv = "data:text/csv;charset=utf-8,\uFEFF" +
@@ -212,7 +218,7 @@ export default function Analiticas() {
     document.body.removeChild(link);
   };
 
-  const resetFilters = () => { setFiltroEstado(""); setFiltroCiudad(""); setTablePage(0); };
+  const resetFilters = () => { setFiltroCiudad(""); setTablePage(0); };
 
   // Tooltip components
   const ChartTooltip = ({ active, payload, label }: any) => {
@@ -323,12 +329,11 @@ export default function Analiticas() {
           <div className="pbi-canvas flex-1 overflow-y-visible md:overflow-y-auto custom-scrollbar p-4 md:p-6">
 
              {/* ── KPI Cards ── */}
-             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
                {[
                  { label: "Total Clientes", val: total, icon: <Users size={15} />, color: "text-purple-300", iconColor: "text-purple-400", bg: "bg-purple-500/10", bgImage: "/card_bg_mycelium.png" },
-                 { label: "Activos", val: activos, icon: <CheckCircle size={15} />, color: "text-fuchsia-300", iconColor: "text-fuchsia-400", bg: "bg-fuchsia-500/10", bgImage: "/card_bg_spores.png", sub: `${pctActivos}%` },
-                 { label: "Inactivos", val: inactivos, icon: <XCircle size={15} />, color: "text-violet-300", iconColor: "text-violet-400", bg: "bg-violet-500/10", bgImage: "/card_bg_mushrooms.png" },
-                 { label: "Territorios", val: territorios, icon: <MapPin size={15} />, color: "text-indigo-300", iconColor: "text-indigo-400", bg: "bg-indigo-500/10", bgImage: "/card_bg_forest.png" },
+                 { label: "Municipios", val: territorios, icon: <MapPin size={15} />, color: "text-fuchsia-300", iconColor: "text-fuchsia-400", bg: "bg-fuchsia-500/10", bgImage: "/card_bg_spores.png" },
+                 { label: "Nuevos este mes", val: nuevosEsteMes, icon: <TrendingUp size={15} />, color: "text-violet-300", iconColor: "text-violet-400", bg: "bg-violet-500/10", bgImage: "/card_bg_mushrooms.png" },
                ].map((kpi) => (
                  <div key={kpi.label} className="pbi-tile group relative overflow-hidden transition-all duration-300 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/5 border-purple-500/10 bg-gradient-to-br from-purple-500/10 via-[#0A060F]/90 to-[#05060B]/95">
                    {/* Background image in purple/violet tint */}
@@ -356,9 +361,6 @@ export default function Analiticas() {
                      <p className={`text-2xl font-extrabold ${kpi.color}`}>
                        {cargando ? <span className="pbi-skeleton inline-block w-12 h-7" /> : kpi.val}
                      </p>
-                     {kpi.sub && !cargando && (
-                       <p className="text-[0.65rem] text-purple-300/40 mt-1">{kpi.sub} tasa de actividad</p>
-                     )}
                    </div>
                  </div>
                ))}
@@ -424,14 +426,14 @@ export default function Analiticas() {
                     </div>
                   </PBITile>
 
-                  <PBITile title="Ciclo de Actividad" icon={<Calendar size={13} className="text-purple-400" />} bgImage="/card_bg_mushrooms.png">
+                  <PBITile title="Distribución por Municipio" icon={<Calendar size={13} className="text-purple-400" />} bgImage="/card_bg_mushrooms.png">
                     <div className="h-56 w-full flex items-center justify-center relative">
                       {mounted && (
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart onMouseMove={handlePieMouseMove} onMouseLeave={handlePieMouseLeave}>
                             <Tooltip content={<PieTooltip />} wrapperStyle={{ pointerEvents: "none" }} isAnimationActive={false} position={pieTooltipPos || undefined} />
-                            <Pie data={dataEstados} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
-                              {dataEstados.map((e, i) => (
+                            <Pie data={ciudadesPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
+                              {ciudadesPieData.map((e, i) => (
                                 <Cell key={i} fill={e.color} />
                               ))}
                             </Pie>
@@ -440,18 +442,17 @@ export default function Analiticas() {
                       )}
                       {/* Center label */}
                       <div className="absolute flex flex-col items-center pointer-events-none">
-                        <span className="text-2xl font-extrabold text-white">{pctActivos}%</span>
-                        <span className="text-[0.55rem] font-bold text-purple-400 uppercase tracking-wider">Activos</span>
+                        <span className="text-2xl font-extrabold text-white">{total}</span>
+                        <span className="text-[0.55rem] font-bold text-purple-400 uppercase tracking-wider">Clientes</span>
                       </div>
                     </div>
                     {/* Legend */}
-                    <div className="flex justify-center gap-6 pt-1 pb-1">
-                      <span className="flex items-center gap-1.5 text-[0.7rem] text-zinc-400">
-                        <span className="w-2.5 h-2.5 rounded-full bg-violet-500" /> Activos ({activos})
-                      </span>
-                      <span className="flex items-center gap-1.5 text-[0.7rem] text-zinc-400">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-300" /> Inactivos ({inactivos})
-                      </span>
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-1 pb-1">
+                      {ciudadesPieData.slice(0, 3).map((ciudad) => (
+                        <span key={ciudad.name} className="flex items-center gap-1.5 text-[0.7rem] text-zinc-400">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ciudad.color }} /> {ciudad.name} ({ciudad.value})
+                        </span>
+                      ))}
                     </div>
                   </PBITile>
                 </div>
@@ -490,7 +491,6 @@ export default function Analiticas() {
                         <tr>
                           <th onClick={() => handleSort("nombre")}>Nombre <SortIcon col="nombre" /></th>
                           <th onClick={() => handleSort("ciudad")}>Ciudad <SortIcon col="ciudad" /></th>
-                          <th onClick={() => handleSort("estado")}>Estado <SortIcon col="estado" /></th>
                           <th onClick={() => handleSort("fechaRegistro")}>Fecha <SortIcon col="fechaRegistro" /></th>
                         </tr>
                       </thead>
@@ -499,13 +499,6 @@ export default function Analiticas() {
                           <tr key={c._id}>
                             <td className="font-semibold text-white/90">{c.nombre}</td>
                             <td>{c.ciudad || "—"}</td>
-                            <td>
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.65rem] font-bold ${
-                                c.estado === "Activo" ? "bg-purple-500/10 text-purple-300" : "bg-fuchsia-500/10 text-fuchsia-300"
-                              }`}>
-                                {c.estado}
-                              </span>
-                            </td>
                             <td className="text-zinc-500">
                               {new Date(c.fechaRegistro).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
                             </td>
@@ -514,7 +507,7 @@ export default function Analiticas() {
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td colSpan={4}>
+                          <td colSpan={3}>
                             <div className="flex items-center justify-between">
                               <span>Mostrando {Math.min(tablePage * ROWS_PER_PAGE + 1, total)}–{Math.min((tablePage + 1) * ROWS_PER_PAGE, total)} de {total}</span>
                               <div className="flex items-center gap-1">
@@ -548,7 +541,7 @@ export default function Analiticas() {
             <div className="mt-6 flex items-center justify-between text-[0.6rem] text-zinc-600 px-1">
               <div className="flex items-center gap-4">
                 <span>Powered by <strong className="text-purple-400/60">MycoCRM Analytics</strong></span>
-                {(filtroEstado || filtroCiudad) && (
+                {(filtroCiudad) && (
                   <span className="text-purple-400/40">● Filtros aplicados</span>
                 )}
               </div>
@@ -567,9 +560,7 @@ export default function Analiticas() {
           <PBIFilterPanel
             isOpen={filtersOpen}
             ciudades={ciudadesUnicas}
-            filtroEstado={filtroEstado}
             filtroCiudad={filtroCiudad}
-            onEstadoChange={(v) => { setFiltroEstado(v); setTablePage(0); }}
             onCiudadChange={(v) => { setFiltroCiudad(v); setTablePage(0); }}
             onClose={() => setFiltersOpen(false)}
             onReset={resetFilters}

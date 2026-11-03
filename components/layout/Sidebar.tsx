@@ -321,8 +321,8 @@ export default function Sidebar({ theme = "default" }: { theme?: SidebarTheme })
         <div className="relative z-10 px-5 mt-4">
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-3 text-center">
-              <p className="text-lg font-extrabold text-emerald-400/90">🌿</p>
-              <p className="text-[0.6rem] text-zinc-600 font-semibold uppercase mt-1">Activos</p>
+              <p className="text-lg font-extrabold text-emerald-400/90">🍄</p>
+              <p className="text-[0.6rem] text-zinc-600 font-semibold uppercase mt-1">Clientes</p>
             </div>
             <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-3 text-center">
               <p className="text-lg font-extrabold text-amber-400/90">📊</p>

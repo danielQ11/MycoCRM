@@ -7,30 +7,24 @@ import { useState } from "react";
 type Props = {
   isOpen: boolean;
   ciudades: string[];
-  filtroEstado: string;
   filtroCiudad: string;
-  onEstadoChange: (v: string) => void;
   onCiudadChange: (v: string) => void;
   onClose: () => void;
   onReset: () => void;
 };
 
 export default function PBIFilterPanel({
-  isOpen, ciudades, filtroEstado, filtroCiudad,
-  onEstadoChange, onCiudadChange, onClose, onReset,
+  isOpen, ciudades, filtroCiudad,
+  onCiudadChange, onClose, onReset,
 }: Props) {
-  const [seccionEstado, setSeccionEstado] = useState(true);
   const [seccionCiudad, setSeccionCiudad] = useState(true);
-
-  const estados = ["Todos", "Activo", "Inactivo"];
 
   const tips = [
     "Filtra por ciudad para ver tendencias locales.",
-    "Los clientes activos reflejan tu red más fuerte.",
-    "Combina filtros para análisis más precisos.",
+    "Combina la tabla y las gráficas para comparar municipios.",
     "Exporta los datos filtrados con el botón CSV.",
     "Usa el radar para ver distribución territorial.",
-    "La tasa de actividad muestra la salud del ecosistema.",
+    "La gráfica circular muestra el peso de cada municipio.",
     "Cada municipio es un nodo de tu red micelial.",
   ];
   const tipDelDia = tips[new Date().getDay() % tips.length];
@@ -74,37 +68,6 @@ export default function PBIFilterPanel({
         </div>
       </div>
 
-      {/* Estado Slicer */}
-      <div className="relative z-10 pbi-filter-section">
-        <button
-          onClick={() => setSeccionEstado(!seccionEstado)}
-          className="flex items-center gap-1.5 w-full mb-2"
-        >
-          {seccionEstado ? <ChevronDown size={12} className="text-zinc-500" /> : <ChevronRight size={12} className="text-zinc-500" />}
-          <label className="!mb-0 cursor-pointer">Estado del Cliente</label>
-        </button>
-        {seccionEstado && (
-          <div className="space-y-1">
-            {estados.map((est) => (
-              <button
-                key={est}
-                onClick={() => onEstadoChange(est === "Todos" ? "" : est)}
-                className={`pbi-slicer-btn ${
-                  (est === "Todos" && !filtroEstado) || filtroEstado === est ? "active" : ""
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${
-                    est === "Activo" ? "bg-purple-500" : est === "Inactivo" ? "bg-purple-300" : "bg-zinc-600"
-                  }`} />
-                  {est}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Ciudad Slicer */}
       <div className="relative z-10 pbi-filter-section">
         <button
@@ -136,25 +99,17 @@ export default function PBIFilterPanel({
       </div>
 
       {/* Active Filters Badge */}
-      {(filtroEstado || filtroCiudad) && (
+      {filtroCiudad && (
         <div className="relative z-10 px-4 py-3 border-b border-white/[0.04]">
           <div className="rounded-lg bg-purple-500/5 border border-purple-500/10 p-3">
             <p className="text-[0.6rem] font-bold uppercase tracking-wider text-purple-400/60 mb-1.5">
               Filtros activos
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {filtroEstado && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 text-[0.65rem] font-semibold text-purple-300">
-                  {filtroEstado}
-                  <button onClick={() => onEstadoChange("")} className="hover:text-white">×</button>
-                </span>
-              )}
-              {filtroCiudad && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 text-[0.65rem] font-semibold text-purple-300">
-                  {filtroCiudad}
-                  <button onClick={() => onCiudadChange("")} className="hover:text-white">×</button>
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 text-[0.65rem] font-semibold text-purple-300">
+                {filtroCiudad}
+                <button onClick={() => onCiudadChange("")} className="hover:text-white">×</button>
+              </span>
             </div>
           </div>
         </div>
@@ -170,7 +125,7 @@ export default function PBIFilterPanel({
             <div className="w-6 h-6 rounded-md bg-purple-500/10 text-purple-400 flex items-center justify-center mx-auto mb-1.5">
               <Activity size={12} />
             </div>
-            <p className="text-[0.55rem] text-zinc-500 font-semibold uppercase">Estado</p>
+            <p className="text-[0.55rem] text-zinc-500 font-semibold uppercase">Registros</p>
           </div>
           <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-2.5 text-center group hover:border-violet-500/15 transition-all duration-300">
             <div className="w-6 h-6 rounded-md bg-violet-500/10 text-violet-400 flex items-center justify-center mx-auto mb-1.5">
