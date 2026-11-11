@@ -137,6 +137,10 @@ type PersonCallSummary = {
   key: string;
   name: string;
   calls: number;
+  successfulCalls: number;
+  unsuccessfulCalls: number;
+  notContactedCalls: number;
+  unclassifiedCalls: number;
   lastCall: string;
   lastCallTime: number;
   lastState: string;
@@ -179,6 +183,18 @@ function isBarridoValue(value: string): boolean {
 function isBarridoRecord(record: FormRecord, sweepKey: string | null): boolean {
   if (!sweepKey) return false;
   return isBarridoValue(record[sweepKey] || "");
+}
+
+function getCallOutcome(value: string):
+  | "successful"
+  | "unsuccessful"
+  | "notContacted"
+  | "unclassified" {
+  const state = normalizeText(value);
+  if (state.includes("no exitosa")) return "unsuccessful";
+  if (state.includes("exitosa")) return "successful";
+  if (state.includes("no contact")) return "notContacted";
+  return "unclassified";
 }
 
 // Google Sheets entrega fechas en formato colombiano: D/M/AAAA H:mm:ss.
@@ -251,9 +267,11 @@ function getColumnKeys(headers: string[]): {
     categoryKey: findKey([
       /categor|tipo|producto|servicio|motivo|inter[eé]s|preferencia|motivaci[oó]n|aspecto/i,
     ]),
-    stateKey: findKey([
-      /estado|status|condici[oó]n|c[oó]mo fue|llamada|gesti[oó]n/i,
-    ]),
+    stateKey:
+      headers.find((h) => /c[oó]mo fue la llamada/i.test(h)) ||
+      findKey([
+        /estado|status|condici[oó]n|c[oó]mo fue|llamada|gesti[oó]n/i,
+      ]),
     cityKey: findKey([
       /ciudad|municipio|localidad|residencia/i,
     ]),
@@ -458,6 +476,9 @@ export default function FormsDashboard() {
       const name = nameKey ? (record[nameKey] || "").trim() : "";
       if (!name) return;
 
+      const outcome = getCallOutcome(
+        stateKey ? record[stateKey] || "" : ""
+      );
       const key = normalizeText(name);
       const lastCall = dateKey ? record[dateKey] || "" : "";
       const lastCallTime = parseSheetDate(lastCall)?.getTime() || 0;
@@ -468,6 +489,10 @@ export default function FormsDashboard() {
           key,
           name,
           calls: 1,
+          successfulCalls: outcome === "successful" ? 1 : 0,
+          unsuccessfulCalls: outcome === "unsuccessful" ? 1 : 0,
+          notContactedCalls: outcome === "notContacted" ? 1 : 0,
+          unclassifiedCalls: outcome === "unclassified" ? 1 : 0,
           lastCall,
           lastCallTime,
           lastState: stateKey ? getShortLabel(record[stateKey] || "") : "",
@@ -478,6 +503,10 @@ export default function FormsDashboard() {
       }
 
       existing.calls += 1;
+      if (outcome === "successful") existing.successfulCalls += 1;
+      else if (outcome === "unsuccessful") existing.unsuccessfulCalls += 1;
+      else if (outcome === "notContacted") existing.notContactedCalls += 1;
+      else existing.unclassifiedCalls += 1;
       if (lastCallTime >= existing.lastCallTime) {
         existing.lastCall = lastCall;
         existing.lastCallTime = lastCallTime;
@@ -880,7 +909,7 @@ export default function FormsDashboard() {
             {chartData?.stateKey && stateOptions.length > 0 && (
               <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider">
-                  Estado Llamada
+                  Cómo fue la llamada
                 </label>
                 <select
                   value={selectedState}
@@ -1137,11 +1166,15 @@ export default function FormsDashboard() {
           </div>
         ) : (
           <div className="max-h-[28rem] overflow-auto rounded-2xl border border-white/[0.06] custom-scrollbar">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <table className="w-full min-w-[1040px] text-left text-sm">
               <thead className="sticky top-0 z-10 bg-[#0A1512]">
                 <tr className="border-b border-white/[0.06] text-[0.62rem] font-bold uppercase tracking-wider text-zinc-500">
                   <th className="px-4 py-3">Persona</th>
                   <th className="px-4 py-3 text-center">Llamadas</th>
+                  <th className="px-4 py-3 text-center">Exitosas</th>
+                  <th className="px-4 py-3 text-center">No exitosas</th>
+                  <th className="px-4 py-3 text-center">No contactadas</th>
+                  <th className="px-4 py-3 text-center">Sin estado</th>
                   <th className="px-4 py-3">Última llamada</th>
                   <th className="px-4 py-3">Último estado</th>
                   <th className="px-4 py-3">Asesor</th>
@@ -1173,6 +1206,18 @@ export default function FormsDashboard() {
                       >
                         {person.calls}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-center font-semibold text-emerald-300">
+                      {person.successfulCalls}
+                    </td>
+                    <td className="px-4 py-3 text-center font-semibold text-rose-300">
+                      {person.unsuccessfulCalls}
+                    </td>
+                    <td className="px-4 py-3 text-center font-semibold text-amber-300">
+                      {person.notContactedCalls}
+                    </td>
+                    <td className="px-4 py-3 text-center text-zinc-500">
+                      {person.unclassifiedCalls}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-400">
                       {person.lastCall ? formatDate(person.lastCall) : "—"}
