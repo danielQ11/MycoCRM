@@ -354,7 +354,10 @@ export default function FormsDashboard() {
   const fetchData = useCallback(async (force = false) => {
     if (force) setRefreshing(true);
     try {
-      const res = await fetch("/api/sheets" + (force ? "?t=" + Date.now() : ""));
+      const res = await fetch(
+        "/api/sheets" + (force ? "?t=" + Date.now() : ""),
+        { cache: "no-store" }
+      );
       const json = await res.json();
       setData(json);
       setError(json.error || null);
@@ -422,14 +425,11 @@ export default function FormsDashboard() {
     ]
   );
 
-  // Filtrar registros (las respuestas sin "Interés" no se muestran en tarjetas/gráficos)
+  // Conservar todas las filas del XLSX; los filtros solo aplican cuando el usuario los selecciona.
   const filteredRecords = useMemo(() => {
     if (!data?.records) return [];
-    return data.records.filter((record) => {
-      if (chartData?.categoryKey && !record[chartData.categoryKey]) return false;
-      return matchesSelectedFilters(record);
-    });
-  }, [data, chartData, matchesSelectedFilters]);
+    return data.records.filter(matchesSelectedFilters);
+  }, [data, matchesSelectedFilters]);
 
   // Resumen de llamadas por persona: excluye barridos y respeta los filtros activos.
   const callSummary = useMemo(() => {
@@ -692,27 +692,14 @@ export default function FormsDashboard() {
             <FileSpreadsheet size={32} className="text-teal-400" />
           </div>
           <h3 className="text-xl font-bold text-teal-200">
-            Google Sheets no está configurado
+            No se encontró el archivo XLSX de respuestas
           </h3>
           <p className="max-w-md text-sm text-zinc-400 leading-relaxed">
-            Para visualizar las respuestas del formulario, configura las
-            variables de entorno{" "}
+            Verifica que el archivo{" "}
             <code className="rounded bg-white/5 px-1.5 py-0.5 text-teal-300 text-xs">
-              GOOGLE_SHEET_ID
-            </code>
-            ,{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5 text-teal-300 text-xs">
-              GOOGLE_CLIENT_EMAIL
-            </code>
-            ,{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5 text-teal-300 text-xs">
-              GOOGLE_PRIVATE_KEY
+              data/respuestas-formulario-final.xlsx
             </code>{" "}
-            y{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5 text-teal-300 text-xs">
-              GOOGLE_PROJECT_ID
-            </code>{" "}
-            en tu archivo <code className="rounded bg-white/5 px-1.5 py-0.5 text-teal-300 text-xs">.env.local</code>.
+            esté disponible en el servidor de la app.
           </p>
         </div>
       </div>
@@ -841,13 +828,13 @@ export default function FormsDashboard() {
         </div>
         <div className="rounded-2xl border border-teal-500/10 bg-gradient-to-br from-teal-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Respuestas con interés
+            Respuestas del formulario
           </p>
           <p className="mt-2 text-3xl font-extrabold text-teal-400">
             {records.length}
           </p>
           <p className="mt-1 text-[0.65rem] text-zinc-600">
-            visibles en tarjetas y gráficos
+            visibles según los filtros
           </p>
         </div>
         <div className="rounded-2xl border border-teal-500/10 bg-gradient-to-br from-teal-950/10 to-[#0A1512] p-5 backdrop-blur-xl">
@@ -1348,7 +1335,7 @@ export default function FormsDashboard() {
 
                     {/* Preguntas y respuestas */}
                     <div className="space-y-3">
-                      {headers.slice(0, visibleCount >= records.length ? headers.length : 6).map((header) => {
+                      {headers.map((header) => {
                         const value = record[header];
                         if (!value) return null;
                         return (
