@@ -175,6 +175,39 @@ function normalizeText(value: string): string {
     .replace(/\s+/g, " ");
 }
 
+// Canonicaliza ciudades solo para filtros y gráficas; los datos del XLSX no cambian.
+function normalizeCityName(value: string): string {
+  let city = normalizeText(value)
+    .replace(/[.,;:()_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+(colombia|antioquia|caldas)$/i, "")
+    .trim();
+
+  const spellingCorrections: Record<string, string> = {
+    mdellin: "medellin",
+    medelllin: "medellin",
+  };
+  city = spellingCorrections[city] || city;
+
+  const displayNames: Record<string, string> = {
+    medellin: "Medellín",
+    envigado: "Envigado",
+    itagui: "Itagüí",
+    bello: "Bello",
+    sabaneta: "Sabaneta",
+    bogota: "Bogotá",
+    anserma: "Anserma",
+    "ciudad bolivar": "Ciudad Bolívar",
+    "la estrella": "La Estrella",
+  };
+
+  return (
+    displayNames[city] ||
+    city.replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+}
+
 // Los registros cuyo barrido empieza por "Barrido" no cuentan como llamadas.
 function isBarridoValue(value: string): boolean {
   return /^barrido/i.test(value.trim());
@@ -416,7 +449,9 @@ export default function FormsDashboard() {
         if (record[chartData.stateKey] !== selectedState) return false;
       }
       if (chartData?.cityKey && selectedCity !== "all") {
-        if (record[chartData.cityKey] !== selectedCity) return false;
+        if (normalizeCityName(record[chartData.cityKey] || "") !== selectedCity) {
+          return false;
+        }
       }
       if (chartData?.advisorKey && selectedAdvisor !== "all") {
         if (record[chartData.advisorKey] !== selectedAdvisor) return false;
@@ -661,6 +696,21 @@ export default function FormsDashboard() {
       .slice(0, 8);
   }, [chartData, filteredRecords]);
 
+  // Distribución por ciudad agrupando tildes, departamentos y errores conocidos.
+  const cityChartData = useMemo(() => {
+    if (!chartData?.cityKey) return [];
+    const conteo: Record<string, number> = {};
+    filteredRecords.forEach((record) => {
+      const rawCity = (record[chartData.cityKey!] || "").trim();
+      if (!rawCity) return;
+      const city = normalizeCityName(rawCity);
+      conteo[city] = (conteo[city] || 0) + 1;
+    });
+    return Object.entries(conteo)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [chartData, filteredRecords]);
+
   // Opciones de filtros
   const categoryOptions = useMemo(() => {
     if (!chartData?.categoryKey || !data?.records) return [];
@@ -686,8 +736,8 @@ export default function FormsDashboard() {
     if (!chartData?.cityKey || !data?.records) return [];
     const set = new Set<string>();
     data.records.forEach((r) => {
-      const val = r[chartData.cityKey!];
-      if (val) set.add(val);
+      const val = (r[chartData.cityKey!] || "").trim();
+      if (val) set.add(normalizeCityName(val));
     });
     return Array.from(set).sort();
   }, [chartData, data]);
@@ -1311,6 +1361,17 @@ export default function FormsDashboard() {
               {CHART_LABELS.interestKey}
             </h3>
             <MiniBarChart data={interestChartData} color="#2DD4BF" />
+          </div>
+        )}
+
+        {/* Distribución por ciudad con variantes agrupadas */}
+        {cityChartData.length > 0 && chartData?.cityKey && (
+          <div className="relative overflow-hidden rounded-3xl border border-cyan-500/10 bg-gradient-to-br from-cyan-950/10 via-[#0A1512] to-[#050B07] p-6 backdrop-blur-xl">
+            <h3 className="text-sm font-bold text-zinc-400 flex items-center gap-2 mb-4">
+              <Filter size={14} className="text-cyan-400" />
+              Respuestas por ciudad
+            </h3>
+            <MiniBarChart data={cityChartData} color="#67E8F9" />
           </div>
         )}
       </div>
